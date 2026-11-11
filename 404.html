@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="referrer" content="no-referrer">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="data:,">
+  <title>Kite request token</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      min-height: 100vh;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    main { max-width: 40rem; width: 100%; }
+    h1 { font-size: 1.25rem; margin: 0 0 0.75rem; }
+    #hint { margin: 0 0 1rem; }
+    #box {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: stretch;
+    }
+    #token {
+      flex: 1 1 16rem;
+      font-size: 1.15rem;
+      line-height: 1.4;
+      word-break: break-all;
+      padding: 1rem;
+      border: 1px solid currentColor;
+      border-radius: 0.4rem;
+      user-select: all;
+    }
+    #copy {
+      font-size: 1rem;
+      padding: 0.75rem 1.25rem;
+      cursor: pointer;
+    }
+    #msg { margin: 1rem 0 0; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1 id="title">Kite request token</h1>
+    <p id="hint" hidden>Paste this into the Zerodha bot's masked field</p>
+    <div id="box" hidden>
+      <code id="token"></code>
+      <button type="button" id="copy">Copy</button>
+    </div>
+    <p id="msg"></p>
+  </main>
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var status = params.get("status") || "";
+      var token = params.get("request_token") || "";
+      var title = document.getElementById("title");
+      var hint = document.getElementById("hint");
+      var box = document.getElementById("box");
+      var tokenEl = document.getElementById("token");
+      var copy = document.getElementById("copy");
+      var msg = document.getElementById("msg");
+
+      function selectToken() {
+        var range = document.createRange();
+        range.selectNodeContents(tokenEl);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+
+      if (status && status !== "success") {
+        title.textContent = "Login not completed";
+        msg.textContent = "Kite returned a non-success status. No token to copy.";
+        return;
+      }
+      if (!token) {
+        title.textContent = "No request token";
+        msg.textContent = "This page expects a request_token in the query string after a Kite login.";
+        return;
+      }
+
+      tokenEl.textContent = token;
+      box.hidden = false;
+      hint.hidden = false;
+
+      copy.addEventListener("click", function () {
+        function marked() { copy.textContent = "Copied"; }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(token).then(marked).catch(function () {
+            selectToken();
+            try {
+              if (document.execCommand("copy")) marked();
+              else copy.textContent = "Select and copy";
+            } catch (e) {
+              copy.textContent = "Select and copy";
+            }
+          });
+          return;
+        }
+        selectToken();
+        try {
+          if (document.execCommand("copy")) marked();
+          else copy.textContent = "Select and copy";
+        } catch (e) {
+          copy.textContent = "Select and copy";
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
